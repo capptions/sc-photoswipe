@@ -1,0 +1,30 @@
+{
+  "name": "sc-photoswipe",
+  "description": "Polymer 1.0 element that wraps around photoswipe.com",
+  "authors": [
+    "Safety Changer"
+  ],
+  "keywords": [
+    "web-components",
+    "web-component",
+    "polymer",
+    "photoswipe",
+    "swipe",
+    "gallery",
+    "photo",
+    "carousel"
+  ],
+  "main": "sc-photoswipe.html",
+  "ignore": {},
+  "private": false,
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/safetychanger/sc-photoswipe"
+  },
+  "license": "http://polymer.github.io/LICENSE.txt",
+  "homepage": "https://github.com/safetychanger/sc-photoswipe",
+  "dependencies": {
+    "polymer": "latest",
+    "photoswipe": "latest"
+  }
+}
