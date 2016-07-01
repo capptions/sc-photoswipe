@@ -114,7 +114,7 @@
         return;
       }
 
-      this._pswp = this._pswp || this.querySelectorAll('.pswp')[0];
+      this._pswp = this._pswp || this.shadowRoot.querySelectorAll('.pswp')[0];
       document.body.appendChild(this._pswp);
 
       var ui = window.PhotoSwipeUI_Default;
