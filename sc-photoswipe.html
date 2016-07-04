@@ -1,60 +1,64 @@
 <link rel="import" href="../polymer/polymer.html" />
-<link rel="stylesheet" href="../photoswipe/dist/photoswipe.css" />
-<link rel="stylesheet" href="../photoswipe/dist/default-skin/default-skin.css" />
+
+<link rel="stylesheet" href="../photoswipe/dist/photoswipe.css">
+<link rel="stylesheet" href="../photoswipe/dist/default-skin/default-skin.css">
+
 <script src="../photoswipe/dist/photoswipe.js"></script>
 <script src="../photoswipe/dist/photoswipe-ui-default.js"></script>
 
 <dom-module id="sc-photoswipe">
-  <style>
-    .preview img {
-      width: 100%;
-    }
-  </style>
-
   <template>
+    <style>
+      .preview {
+        margin: 0 -.5vw;
+        line-height: 0;
+        display: -ms-flexbox;
+        -ms-flex-wrap: wrap;
+        -ms-flex-direction: column;
+        -webkit-flex-flow: row wrap;
+        flex-flow: row wrap;
+        display: -webkit-box;
+        display: flex;
+        min-height: 150px;
+      }
+      .preview div {
+        -webkit-box-flex: auto;
+        -ms-flex: auto;
+        flex: auto;
+        width: 150px;
+        margin: .5vw;
+        border: 1px solid #eee;
+      }
+      .preview div img {
+        width: 100%;
+        height: auto;
+      }
+    </style>
 
     <div class="preview">
-      <img src="[[items.0.src]]" alt="" on-tap="render" />
+      <content></content>
+      <template is="dom-repeat" items="[[items]]">
+        <div><img src="[[thumbnail(item)]]" alt on-tap="popup"></div>
+      </template>
     </div>
 
-    <!-- Root element of PhotoSwipe. Must have class pswp. -->
-    <div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
-
-      <!-- Background of PhotoSwipe.
-           It's a separate element as animating opacity is faster than rgba(). -->
+    <div class="pswp" tabindex="-1" role="dialog" aria-hidden="true" id="pswp" hidden>
       <div class="pswp__bg"></div>
-
-      <!-- Slides wrapper with overflow:hidden. -->
       <div class="pswp__scroll-wrap">
-
-        <!-- Container that holds slides.
-             PhotoSwipe keeps only 3 of them in the DOM to save memory.
-             Don't modify these 3 pswp__item elements, data is added later on. -->
         <div class="pswp__container">
           <div class="pswp__item"></div>
           <div class="pswp__item"></div>
           <div class="pswp__item"></div>
         </div>
-
-        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
         <div class="pswp__ui pswp__ui--hidden">
 
           <div class="pswp__top-bar">
-
-            <!-- Controls are self-explanatory. Order can be changed. -->
-
             <div class="pswp__counter"></div>
-
             <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
-
             <button class="pswp__button pswp__button--share" title="Share"></button>
-
             <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
-
             <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
 
-            <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
-            <!-- element will get class pswp__preloader--active when preloader is running -->
             <div class="pswp__preloader">
               <div class="pswp__preloader__icn">
                 <div class="pswp__preloader__cut">
@@ -68,20 +72,16 @@
             <div class="pswp__share-tooltip"></div>
           </div>
 
-          <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
-          </button>
+          <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)"></button>
 
-          <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
-          </button>
+          <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button>
 
           <div class="pswp__caption">
             <div class="pswp__caption__center"></div>
           </div>
 
         </div>
-
       </div>
-
     </div>
   </template>
 </dom-module>
@@ -97,32 +97,70 @@
         type: Array,
         value: []
       },
+      dummy: {
+        type: String,
+        value: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
+      },
       options: {
         type: Object,
         value: {
           captionEl: false,
-          fullscreenEl: false,
-          zoomEl: false,
+          fullscreenEl: true,
+          zoomEl: true,
           shareEl: false,
           history: false
         }
       }
     },
 
-    render: function () {
+    observers: [
+      'initialize(items.splices)'
+    ],
+
+    initialize: function () {
+      this.items.forEach(function (item) {
+        if (!item.src) {
+          return;
+        }
+
+        var img = new Image();
+        img.style.visibility = 'hidden';
+        img.style.position = 'absolute';
+        img.onload = img.onerror = function () {
+          var rect = this.getBoundingClientRect();
+          item.w = rect && rect.width * 10 || 100;
+          item.h = rect && rect.height * 10 || 100;
+          document.body.removeChild(img);
+        };
+        document.body.appendChild(img);
+        img.src = item.src;
+      });
+    },
+
+    popup: function (e) {
       if (!this.items || !this.items.length) {
         return;
       }
 
-      this._pswp = this._pswp || this.shadowRoot.querySelectorAll('.pswp')[0];
-      document.body.appendChild(this._pswp);
+      var el = e.detail.sourceEvent.target.parentNode;
+      var elements = [].slice.call(el.parentNode.getElementsByTagName('div'));
+      this.options.index = elements.indexOf(el);
+
+      if (!this._pswp) {
+        this._pswp = this.$.pswp;
+        document.body.appendChild(this._pswp);
+      }
 
       var ui = window.PhotoSwipeUI_Default;
 
       this.photoswipe = new window.PhotoSwipe(this._pswp, ui, this.items, this.options);
+      this._pswp.removeAttribute('hidden');
       this.photoswipe.init();
-    }
+    },
 
+    thumbnail: function (item) {
+      return item.thumbnail || item.src || this.dummy;
+    }
   });
 
 })();
