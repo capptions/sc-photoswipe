@@ -1,4 +1,6 @@
 <link rel="import" href="../polymer/polymer.html" />
+<link rel="import" href="../polymer/polymer.html" />
+<link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
 
 <link rel="stylesheet" href="../photoswipe/dist/photoswipe.css">
 <link rel="stylesheet" href="../photoswipe/dist/default-skin/default-skin.css">
@@ -10,35 +12,78 @@
   <template>
     <style>
       .preview {
-        margin: 0 -.5vw;
-        line-height: 0;
-        display: -ms-flexbox;
-        -ms-flex-wrap: wrap;
-        -ms-flex-direction: column;
-        -webkit-flex-flow: row wrap;
-        flex-flow: row wrap;
-        display: -webkit-box;
-        display: flex;
-        min-height: 150px;
+        @apply(--layout-horizontal);
+        @apply(--layout-wrap);
+        @apply(--layout-start-justified);
+        margin: 0 -5px;
       }
-      .preview div {
-        -webkit-box-flex: auto;
-        -ms-flex: auto;
-        flex: auto;
-        width: 150px;
-        margin: .5vw;
-        border: 1px solid #eee;
+
+      .preview > div, .preview ::content > * {
+        position: relative;
+        @apply(--layout-flex);
+        @apply(--layout);
+        margin: 5px;
+        border: 1px dotted #eee;
+        min-height: 100px;
+        min-width: 125px;
+        border-radius: 2px;
+        @apply(--sc-photoswipe-preview-item);
       }
-      .preview div img {
+
+      .preview > * > img, .preview ::content > * > img {
         width: 100%;
-        height: auto;
+        background: white;
+        @apply(--layout-self-center);
+
+        @apply(--sc-photoswipe-preview-item-image);
+      }
+
+      .preview > * > label, .preview ::content > * > label {
+        @apply(--layout-fit);
+        @apply(--layout);
+        @apply(--layout-center-center);
+
+        z-index: -1;
+        text-align: center;
+        color: var(--secondary-text-color);
+
+        @apply(--sc-photoswipe-preview-item-label);
+      }
+      .preview > * > label > span {
+        padding: 5px;
+        border-radius: 2px;
+      }
+      .preview > *:hover > label {
+        z-index: 1;
+      }
+      .preview > *:hover > label > span {
+        background-color: rgba(255, 255, 255, 0.9);
+      }
+
+      .preview > * > paper-icon-button {
+        visibility: hidden;
+        position: absolute;
+        top: 0;
+        right: 0;
+        z-index: 2;
+        background: white;
+        color: var(--primary-color);
+      }
+      .preview > *:hover > paper-icon-button {
+        visibility: visible;
       }
     </style>
 
     <div class="preview">
       <content></content>
       <template is="dom-repeat" items="[[items]]">
-        <div><img src="[[thumbnail(item)]]" alt on-tap="popup"></div>
+        <div data-index$="[[index]]" on-tap="popup">
+          <paper-icon-button icon="remove-circle-outline" on-tap="remove"></paper-icon-button>
+          <label>
+            <span>[[item.name]]</span>
+          </label>
+          <img src="[[thumbnail(item)]]" alt hidden on-load="imageLoaded" on-error="imageError">
+        </div>
       </template>
     </div>
 
@@ -101,6 +146,10 @@
         type: String,
         value: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
       },
+      removeable: {
+        type: Boolean,
+        value: false
+      },
       options: {
         type: Object,
         value: {
@@ -126,11 +175,14 @@
         var img = new Image();
         img.style.visibility = 'hidden';
         img.style.position = 'absolute';
-        img.onload = img.onerror = function () {
+        img.onload = function () {
           var rect = this.getBoundingClientRect();
           item.w = rect && rect.width * 10 || 100;
           item.h = rect && rect.height * 10 || 100;
           document.body.removeChild(img);
+        };
+        img.onerror = function () {
+
         };
         document.body.appendChild(img);
         img.src = item.src;
@@ -142,9 +194,27 @@
         return;
       }
 
-      var el = e.detail.sourceEvent.target.parentNode;
-      var elements = [].slice.call(el.parentNode.getElementsByTagName('div'));
-      this.options.index = elements.indexOf(el);
+      var el = e.detail.sourceEvent.target;
+      while (el.tagName !== 'DIV') {
+        el = el.parentNode;
+      }
+
+      var index = parseInt(el.getAttribute('data-index'), 10);
+      var item = this.items[index];
+
+      var items = this.items.filter(function (item) {
+        return /image|jpg|jpeg|png/i.test(item.type);
+      });
+
+      this.options.index = items.indexOf(item);
+
+      if (!items.length || this.options.index < 0) {
+        if (window.viewImage) {
+          return window.viewImage(item.src);
+        }
+
+        return window.open(item.src);
+      }
 
       if (!this._pswp) {
         this._pswp = this.$.pswp;
@@ -153,13 +223,27 @@
 
       var ui = window.PhotoSwipeUI_Default;
 
-      this.photoswipe = new window.PhotoSwipe(this._pswp, ui, this.items, this.options);
+      this.photoswipe = new window.PhotoSwipe(this._pswp, ui, items, this.options);
       this._pswp.removeAttribute('hidden');
       this.photoswipe.init();
     },
 
+    remove: function (e) {
+      e.preventDefault();
+      e.cancelBubble = true;
+      this.fire('remove', e.model.__data__.item);
+    },
+
     thumbnail: function (item) {
       return item.thumbnail || item.src || this.dummy;
+    },
+
+    imageLoaded: function (e) {
+      e.path[0].removeAttribute('hidden');
+    },
+
+    imageError: function (e) {
+      e.path[0].src = this.dummy;
     }
   });
 
