@@ -81,11 +81,13 @@
       <content></content>
       <template is="dom-repeat" items="[[items]]">
         <div data-index$="[[index]]" on-tap="popup">
-          <paper-icon-button icon="remove-circle-outline" on-tap="remove"></paper-icon-button>
+          <template is="dom-if" if="[[removeable]]">
+            <paper-icon-button icon="remove-circle-outline" on-tap="remove"></paper-icon-button>
+          </template>
           <label>
             <span>[[item.name]]</span>
           </label>
-          <img src="[[thumbnail(item)]]" alt hidden on-load="imageLoaded" on-error="imageError">
+          <img src$="[[thumbnail(item)]]" alt hidden on-load="imageLoaded" on-error="imageError">
         </div>
       </template>
     </div>
