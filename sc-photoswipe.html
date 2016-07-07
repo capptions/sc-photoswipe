@@ -18,10 +18,13 @@
         margin: 0 -5px;
       }
 
-      .preview > div, .preview ::content > * {
+      .preview > div, .preview ::content > div {
         position: relative;
-        @apply(--layout-flex);
         @apply(--layout);
+        @apply(--layout-flex);
+        -ms-flex: 1 1 125px;
+        -webkit-flex-basis: 125px;
+        flex-basis: 125px;
         margin: 5px;
         border: 1px dotted #eee;
         min-height: 100px;
@@ -30,7 +33,7 @@
         @apply(--sc-photoswipe-preview-item);
       }
 
-      .preview > * > img, .preview ::content > * > img {
+      .preview > div > img, .preview ::content > div > img {
         width: 100%;
         background: white;
         @apply(--layout-self-center);
@@ -38,7 +41,7 @@
         @apply(--sc-photoswipe-preview-item-image);
       }
 
-      .preview > * > label, .preview ::content > * > label {
+      .preview > div > label, .preview ::content > div > label {
         @apply(--layout-fit);
         @apply(--layout);
         @apply(--layout-center-center);
@@ -49,18 +52,18 @@
 
         @apply(--sc-photoswipe-preview-item-label);
       }
-      .preview > * > label > span {
+      .preview > div > label > span {
         padding: 5px;
         border-radius: 2px;
       }
-      .preview > *:hover > label {
+      .preview > div:hover > label {
         z-index: 1;
       }
-      .preview > *:hover > label > span {
+      .preview > div:hover > label > span {
         background-color: rgba(255, 255, 255, 0.9);
       }
 
-      .preview > * > paper-icon-button {
+      .preview > div > paper-icon-button {
         visibility: hidden;
         position: absolute;
         top: 0;
@@ -69,7 +72,7 @@
         background: white;
         color: var(--primary-color);
       }
-      .preview > *:hover > paper-icon-button {
+      .preview > div:hover > paper-icon-button {
         visibility: visible;
       }
     </style>
@@ -190,6 +193,9 @@
     },
 
     popup: function (e) {
+      e.preventDefault();
+      e.cancelBubble = true;
+
       if (!this.items || !this.items.length) {
         return;
       }
@@ -239,11 +245,11 @@
     },
 
     imageLoaded: function (e) {
-      e.path[0].removeAttribute('hidden');
+      Polymer.dom(e).rootTarget.removeAttribute('hidden');
     },
 
     imageError: function (e) {
-      e.path[0].src = this.dummy;
+      Polymer.dom(e).rootTarget.src = this.dummy;
     }
   });
 
