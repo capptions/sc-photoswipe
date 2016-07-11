@@ -26,6 +26,7 @@
   "dependencies": {
     "polymer": "latest",
     "iron-flex-layout": "latest",
+    "iron-swipeable-container": "latest",
     "photoswipe": "latest"
   }
 }

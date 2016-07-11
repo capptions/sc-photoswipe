@@ -1,6 +1,7 @@
 <link rel="import" href="../polymer/polymer.html" />
 <link rel="import" href="../polymer/polymer.html" />
 <link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
+<link rel="import" href="../iron-swipeable-container/iron-swipeable-container.html">
 
 <link rel="stylesheet" href="../photoswipe/dist/photoswipe.css">
 <link rel="stylesheet" href="../photoswipe/dist/default-skin/default-skin.css">
@@ -16,6 +17,11 @@
         @apply(--layout-wrap);
         @apply(--layout-start-justified);
         margin: 0 -5px;
+        -webkit-touch-callout: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        -webkit-user-select: none;
+        user-select: none;
       }
 
       .preview > div, .preview ::content > div {
@@ -54,12 +60,6 @@
         @apply(--layout);
         @apply(--layout-center-center);
 
-        -webkit-touch-callout: none;
-        -moz-user-select: none;
-        -ms-user-select: none;
-        -webkit-user-select: none;
-        user-select: none;
-
         z-index: -1;
         text-align: center;
         color: var(--secondary-text-color);
@@ -91,18 +91,17 @@
       }
     </style>
 
-    <div class="preview">
+    <iron-swipeable-container id="swipeable" class="preview" swipe-style="curved" disabled="[[!removeable]]">
       <content></content>
       <template is="dom-repeat" items="[[items]]">
-        <div data-index$="[[index]]" on-tap="gesture" on-down="gesture" on-track="gesture">
-          <paper-icon-button icon="remove-circle" on-tap="remove" hidden="[[!removeable]]"></paper-icon-button>
+        <div data-index$="[[index]]" on-tap="popup">
           <label>
             <span>[[item.name]]</span>
           </label>
-          <img src$="[[thumbnail(item)]]" alt class$="[[className(item.src, index)]]" on-load="imageLoaded" on-error="imageError">
+          <img src$="[[thumbnail(item)]]" alt class$="[[className(item)]]" on-load="imageLoaded">
         </div>
       </template>
-    </div>
+    </iron-swipeable-container>
 
     <div class="pswp" tabindex="-1" role="dialog" aria-hidden="true" id="pswp" hidden>
       <div class="pswp__bg"></div>
@@ -161,10 +160,6 @@
         type: Array,
         value: []
       },
-      dummy: {
-        type: String,
-        value: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7'
-      },
       removeable: {
         type: Boolean,
         value: false
@@ -185,6 +180,21 @@
       'initialize(items.splices)'
     ],
 
+    attached: function () {
+      this.$.swipeable._onTransitionEnd = function (e) {
+        var root = Polymer.dom(e).rootTarget;
+        var index = root.getAttribute('data-index');
+
+        if (!this._swipeComplete || e.propertyName !== 'opacity' || index === null) {
+          return;
+        }
+
+        this.fire('remove', {
+          index: parseInt(index, 10)
+        });
+      };
+    },
+
     initialize: function () {
       this.items.forEach(function (item) {
         if (!item.src) {
@@ -195,6 +205,7 @@
         if (cache[item._id]) {
           item.w = cache[item._id].w;
           item.h = cache[item._id].h;
+          item.loaded = true;
           return;
         }
 
@@ -207,6 +218,7 @@
           var rect = this.getBoundingClientRect();
           item.w = rect && rect.width * 10 || 100;
           item.h = rect && rect.height * 10 || 100;
+          item.loaded = true;
           cache[item._id] = item;
           document.body.removeChild(img);
         };
@@ -214,28 +226,6 @@
         document.body.appendChild(img);
         img.src = item.src;
       });
-    },
-
-    gesture: function (e) {
-      var timeout = 1000;
-      var threshold = 10;
-      var cancelled = e.type === 'track' && this._press &&
-        Math.abs(e.detail.x - this._press.x) + Math.abs(e.detail.y - this._press.y) > threshold;
-
-      if (cancelled) {
-        delete this._press;
-      }
-      else if (e.type === 'down') {
-        this._press = Object.assign({ timestamp: Date.now() }, e.detail);
-      }
-      else if (e.type === 'tap') {
-        var pressed = this._press && Math.abs(this._press.timestamp - Date.now()) > 1000;
-        delete this._press;
-
-        if (!pressed) {
-          this.popup(e);
-        }
-      }
     },
 
     popup: function (e) {
@@ -280,29 +270,18 @@
       this.photoswipe.init();
     },
 
-    remove: function (e) {
-      e.preventDefault();
-      e.cancelBubble = true;
-      document.activeElement.blur();
-      this.fire('remove', e.model.__data__.item);
-    },
-
     thumbnail: function (item) {
       return item.thumbnail || item.src || this.dummy;
     },
 
-    className: function (item, index) {
-      return index === 0 ? 'hidden' : '';
+    className: function (item) {
+      return item.loaded ? '' : 'hidden';
     },
 
     imageLoaded: function (e) {
-      setTimeout(function () {
-        Polymer.dom(e).rootTarget.classList.remove('hidden');
-      }, 100);
-    },
-
-    imageError: function (e) {
-      Polymer.dom(e).rootTarget.src = this.dummy;
+      var root = Polymer.dom(e).rootTarget;
+      root.parentNode.removeAttribute('style');
+      root.classList.remove('hidden');
     }
   });
 
