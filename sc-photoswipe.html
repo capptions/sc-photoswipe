@@ -28,7 +28,6 @@
         margin: 5px;
         border: 1px dotted #eee;
         min-height: 100px;
-        min-width: 125px;
         border-radius: 2px;
         @apply(--sc-photoswipe-preview-item);
       }
@@ -39,12 +38,27 @@
         @apply(--layout-self-center);
 
         @apply(--sc-photoswipe-preview-item-image);
+
+        -webkit-transition: opacity 1s;
+        transition: opacity 1s;
+      }
+
+      .preview > div > img.hidden, .preview ::content > div > img.hidden {
+        opacity: 0;
+        -webkit-transition: opacity 0s;
+        transition: opacity 0s;
       }
 
       .preview > div > label, .preview ::content > div > label {
         @apply(--layout-fit);
         @apply(--layout);
         @apply(--layout-center-center);
+
+        -webkit-touch-callout: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        -webkit-user-select: none;
+        user-select: none;
 
         z-index: -1;
         text-align: center;
@@ -80,14 +94,12 @@
     <div class="preview">
       <content></content>
       <template is="dom-repeat" items="[[items]]">
-        <div data-index$="[[index]]" on-tap="popup">
-          <template is="dom-if" if="[[removeable]]">
-            <paper-icon-button icon="remove-circle-outline" on-tap="remove"></paper-icon-button>
-          </template>
+        <div data-index$="[[index]]" on-tap="gesture" on-down="gesture" on-track="gesture">
+          <paper-icon-button icon="remove-circle" on-tap="remove" hidden="[[!removeable]]"></paper-icon-button>
           <label>
             <span>[[item.name]]</span>
           </label>
-          <img src$="[[thumbnail(item)]]" alt hidden on-load="imageLoaded" on-error="imageError">
+          <img src$="[[thumbnail(item)]]" alt class$="[[className(item.src, index)]]" on-load="imageLoaded" on-error="imageError">
         </div>
       </template>
     </div>
@@ -139,6 +151,8 @@
 <script>
 (function () {
 
+  var cache = {};
+
   window.Polymer({
     is: 'sc-photoswipe',
 
@@ -177,24 +191,59 @@
           return;
         }
 
+        item._id = item._id || 10000 + Math.floor(Math.random() * 89999);
+        if (cache[item._id]) {
+          item.w = cache[item._id].w;
+          item.h = cache[item._id].h;
+          return;
+        }
+
         var img = new Image();
+
         img.style.visibility = 'hidden';
         img.style.position = 'absolute';
+
         img.onload = function () {
           var rect = this.getBoundingClientRect();
           item.w = rect && rect.width * 10 || 100;
           item.h = rect && rect.height * 10 || 100;
+          cache[item._id] = item;
           document.body.removeChild(img);
         };
-        img.onerror = function () {
 
-        };
         document.body.appendChild(img);
         img.src = item.src;
       });
     },
 
+    gesture: function (e) {
+      var timeout = 1000;
+      var threshold = 10;
+      var cancelled = e.type === 'track' && this._press &&
+        Math.abs(e.detail.x - this._press.x) + Math.abs(e.detail.y - this._press.y) > threshold;
+
+      if (cancelled) {
+        delete this._press;
+      }
+      else if (e.type === 'down') {
+        this._press = Object.assign({ timestamp: Date.now() }, e.detail);
+      }
+      else if (e.type === 'tap') {
+        var pressed = this._press && Math.abs(this._press.timestamp - Date.now()) > 1000;
+        delete this._press;
+
+        if (!pressed) {
+          this.popup(e);
+        }
+      }
+    },
+
     popup: function (e) {
+      var target = Polymer.dom(e).rootTarget;
+      while (target.tagName !== 'DIV') {
+        target = target.parentNode;
+      }
+
       e.preventDefault();
       e.cancelBubble = true;
 
@@ -202,12 +251,7 @@
         return;
       }
 
-      var el = e.detail.sourceEvent.target;
-      while (el.tagName !== 'DIV') {
-        el = el.parentNode;
-      }
-
-      var index = parseInt(el.getAttribute('data-index'), 10);
+      var index = parseInt(target.getAttribute('data-index'), 10);
       var item = this.items[index];
 
       var items = this.items.filter(function (item) {
@@ -239,6 +283,7 @@
     remove: function (e) {
       e.preventDefault();
       e.cancelBubble = true;
+      document.activeElement.blur();
       this.fire('remove', e.model.__data__.item);
     },
 
@@ -246,8 +291,14 @@
       return item.thumbnail || item.src || this.dummy;
     },
 
+    className: function (item, index) {
+      return index === 0 ? 'hidden' : '';
+    },
+
     imageLoaded: function (e) {
-      Polymer.dom(e).rootTarget.removeAttribute('hidden');
+      setTimeout(function () {
+        Polymer.dom(e).rootTarget.classList.remove('hidden');
+      }, 100);
     },
 
     imageError: function (e) {
