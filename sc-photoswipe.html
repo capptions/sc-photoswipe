@@ -57,6 +57,12 @@
 
       .preview > div > label, .preview ::content > div > label {
         @apply(--layout-fit);
+
+        top: 1px;
+        right: 1px;
+        bottom: 1px;
+        left: 1px;
+
         @apply(--layout);
         @apply(--layout-center-center);
 
@@ -69,6 +75,9 @@
       .preview > div > label > span {
         padding: 5px;
         border-radius: 2px;
+        word-wrap: break-word;
+        display: inline-block;
+        max-width: 100%;
       }
       .preview > div:hover > label {
         z-index: 1;
@@ -267,7 +276,19 @@
 
       this.photoswipe = new window.PhotoSwipe(this._pswp, ui, items, this.options);
       this._pswp.removeAttribute('hidden');
+
+      this._close = this._close || this.close.bind(this);
+
+      document.addEventListener('backbutton', this._close, false);
       this.photoswipe.init();
+    },
+
+    close: function () {
+      document.removeEventListener('backbutton', this._close, false);
+
+      if (this.photoswipe) {
+        this.photoswipe.close();
+      }
     },
 
     thumbnail: function (item) {
