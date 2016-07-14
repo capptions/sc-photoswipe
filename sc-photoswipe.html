@@ -66,7 +66,8 @@
         @apply(--layout);
         @apply(--layout-center-center);
 
-        z-index: -1;
+        z-index: 1;
+        visibility: hidden;
         text-align: center;
         color: var(--secondary-text-color);
 
@@ -79,24 +80,21 @@
         display: inline-block;
         max-width: 100%;
       }
+      .preview > div > iron-icon {
+        position: absolute;
+        width: 75%;
+        height: 75%;
+        top: 12.5%;
+        left: 12.5%;
+        opacity: 0.2;
+        color: var(--primary-color);
+        z-index: -1;
+      }
       .preview > div:hover > label {
-        z-index: 1;
+        visibility: visible;
       }
       .preview > div:hover > label > span {
         background-color: rgba(255, 255, 255, 0.9);
-      }
-
-      .preview > div > paper-icon-button {
-        visibility: hidden;
-        position: absolute;
-        top: 0;
-        right: 0;
-        z-index: 2;
-        background: white;
-        color: var(--primary-color);
-      }
-      .preview > div:hover > paper-icon-button {
-        visibility: visible;
       }
     </style>
 
@@ -104,6 +102,7 @@
       <content></content>
       <template is="dom-repeat" items="[[items]]">
         <div data-index$="[[index]]" on-tap="popup">
+          <iron-icon icon="[[icon(item)]]"></iron-icon>
           <label>
             <span>[[item.name]]</span>
           </label>
@@ -293,6 +292,23 @@
 
     thumbnail: function (item) {
       return item.thumbnail || item.src || this.dummy;
+    },
+
+    icon: function (item) {
+      if (/pdf/i.test(item.type)) {
+        return 'image:picture-as-pdf';
+      }
+      else if (/video/i.test(item.type)) {
+        return 'image:movie-creation';
+      }
+      else if (/image/i.test(item.type)) {
+        return 'image:photo';
+      }
+      else if (/audio/i.test(item.type)) {
+        return 'image:audiotrack';
+      }
+
+      return 'editor:insert-drive-file';
     },
 
     className: function (item) {
