@@ -206,7 +206,19 @@
     },
 
     initialize: function () {
+      var todo = this.items.length;
+      var done = -1;
+      var end = function () {
+        done += 1;
+
+        if (done >= todo) {
+          this.fire('initialized');
+        }
+      }.bind(this);
+
       this.items.forEach(function (item) {
+        item.src = item.src || item.url;
+
         if (!item.src) {
           return;
         }
@@ -231,28 +243,51 @@
           item.loaded = true;
           cache[item._id] = item;
           document.body.removeChild(img);
+
+          end();
+        };
+
+        img.onerror = function () {
+          end();
         };
 
         document.body.appendChild(img);
         img.src = item.src;
       });
+
+      end();
     },
 
     popup: function (e) {
-      var target = Polymer.dom(e).rootTarget;
-      while (target.tagName !== 'DIV') {
-        target = target.parentNode;
-      }
+      var target;
+      var index = 0;
 
-      e.preventDefault();
-      e.cancelBubble = true;
+      if (e && e.preventDefault) {
+        target = Polymer.dom(e).rootTarget;
+        while (target && target.tagName !== 'DIV') {
+          target = target.parentNode;
+        }
+
+        e.preventDefault();
+        e.cancelBubble = true;
+      }
 
       if (!this.items || !this.items.length) {
         return;
       }
 
-      var index = parseInt(target.getAttribute('data-index'), 10);
+      if (typeof e === 'number') {
+        index = e;
+      }
+      else if (target) {
+        index = parseInt(target.getAttribute('data-index'), 10) || 0;
+      }
+
       var item = this.items[index];
+
+      if (!item) {
+        return;
+      }
 
       var items = this.items.filter(function (item) {
         return /image|jpg|jpeg|png/i.test(item.type);
@@ -261,8 +296,8 @@
       this.options.index = items.indexOf(item);
 
       if (!items.length || this.options.index < 0) {
-        if (window.viewImage) {
-          return window.viewImage(item.src);
+        if (window.viewLink) {
+          return window.viewLink(item.src);
         }
 
         return window.open(item.src);
