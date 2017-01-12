@@ -2,6 +2,7 @@
 <link rel="import" href="../polymer/polymer.html" />
 <link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../iron-swipeable-container/iron-swipeable-container.html">
+<link rel="import" href="icons.html">
 
 <link rel="stylesheet" href="../photoswipe/dist/photoswipe.css">
 <link rel="stylesheet" href="../photoswipe/dist/default-skin/default-skin.css">
@@ -332,20 +333,20 @@
     },
 
     icon: function (item) {
-      if (/pdf/i.test(item.type)) {
-        return 'image:picture-as-pdf';
+      if (/pdf/i.test(item && item.type)) {
+        return 'sc-photoswipe:picture-as-pdf';
       }
-      else if (/video/i.test(item.type)) {
-        return 'image:movie-creation';
+      else if (/video/i.test(item && item.type)) {
+        return 'sc-photoswipe:movie-creation';
       }
-      else if (/image/i.test(item.type)) {
-        return 'image:photo';
+      else if (/image/i.test(item && item.type)) {
+        return 'sc-photoswipe:photo';
       }
-      else if (/audio/i.test(item.type)) {
-        return 'image:audiotrack';
+      else if (/audio/i.test(item && item.type)) {
+        return 'sc-photoswipe:audiotrack';
       }
 
-      return 'editor:insert-drive-file';
+      return 'sc-photoswipe:insert-drive-file';
     },
 
     className: function (item) {
