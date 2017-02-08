@@ -37,6 +37,7 @@
         min-height: 100px;
         border-radius: 2px;
         @apply(--sc-photoswipe-preview-item);
+        justify-content: center;
       }
 
       .preview > div > img, .preview ::content > div > img {
@@ -207,6 +208,10 @@
     },
 
     initialize: function () {
+      if (!this.items) {
+        return;
+      }
+
       var todo = this.items.length;
       var done = -1;
       var end = function () {
