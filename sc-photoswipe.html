@@ -2,13 +2,8 @@
 <link rel="import" href="../polymer/polymer.html" />
 <link rel="import" href="../iron-flex-layout/iron-flex-layout.html">
 <link rel="import" href="../iron-swipeable-container/iron-swipeable-container.html">
+<link rel="import" href="../iron-photo-viewer/iron-photo-viewer.html">
 <link rel="import" href="icons.html">
-
-<link rel="stylesheet" href="../photoswipe/dist/photoswipe.css">
-<link rel="stylesheet" href="../photoswipe/dist/default-skin/default-skin.css">
-
-<script src="../photoswipe/dist/photoswipe.js"></script>
-<script src="../photoswipe/dist/photoswipe-ui-default.js"></script>
 
 <dom-module id="sc-photoswipe">
   <template>
@@ -110,52 +105,13 @@
           <label>
             <span>[[item.name]]</span>
           </label>
-          <img src$="[[thumbnail(item)]]" alt class$="[[className(item)]]" on-load="imageLoaded">
+          <img src$="[[thumbnail(item)]]" alt class$="[[className(item)]]" on-load="imageLoaded" crossOrigin="true">
         </div>
       </template>
     </iron-swipeable-container>
 
-    <div class="pswp" tabindex="-1" role="dialog" aria-hidden="true" id="pswp" hidden>
-      <div class="pswp__bg"></div>
-      <div class="pswp__scroll-wrap">
-        <div class="pswp__container">
-          <div class="pswp__item"></div>
-          <div class="pswp__item"></div>
-          <div class="pswp__item"></div>
-        </div>
-        <div class="pswp__ui pswp__ui--hidden">
+    <iron-photo-viewer id="viewer"></iron-photo-viewer>
 
-          <div class="pswp__top-bar">
-            <div class="pswp__counter"></div>
-            <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
-            <button class="pswp__button pswp__button--share" title="Share"></button>
-            <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
-            <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
-
-            <div class="pswp__preloader">
-              <div class="pswp__preloader__icn">
-                <div class="pswp__preloader__cut">
-                <div class="pswp__preloader__donut"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
-            <div class="pswp__share-tooltip"></div>
-          </div>
-
-          <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)"></button>
-
-          <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)"></button>
-
-          <div class="pswp__caption">
-            <div class="pswp__caption__center"></div>
-          </div>
-
-        </div>
-      </div>
-    </div>
   </template>
 </dom-module>
 
@@ -299,9 +255,9 @@
         return /image|jpg|jpeg|png/i.test(item.type);
       });
 
-      this.options.index = items.indexOf(item);
+      index = items.indexOf(item);
 
-      if (!items.length || this.options.index < 0) {
+      if (!items.length || index < 0) {
         if (window.viewLink) {
           return window.viewLink(item.src);
         }
@@ -309,32 +265,15 @@
         return window.open(item.src);
       }
 
-      if (!this._pswp) {
-        this._pswp = this.$.pswp;
-        document.body.appendChild(this._pswp);
-      }
+      items = items.map(function (item) {
+        return item.src;
+      });
 
-      var ui = window.PhotoSwipeUI_Default;
-
-      this.photoswipe = new window.PhotoSwipe(this._pswp, ui, items, this.options);
-      this._pswp.removeAttribute('hidden');
-
-      this._close = this._close || this.close.bind(this);
-
-      document.addEventListener('backbutton', this._close, false);
-      this.photoswipe.init();
-    },
-
-    close: function () {
-      document.removeEventListener('backbutton', this._close, false);
-
-      if (this.photoswipe) {
-        this.photoswipe.close();
-      }
+      this.$.viewer.view(items, index);
     },
 
     thumbnail: function (item) {
-      return item.thumbnail || item.src || this.dummy;
+      return item.thumbnail || item.thumbnail_url || item.src || this.dummy;
     },
 
     icon: function (item) {
@@ -362,6 +301,8 @@
       var root = Polymer.dom(e).rootTarget;
       root.parentNode.removeAttribute('style');
       root.classList.remove('hidden');
+
+      this.fire('load', { img: root, url: root.src }, { bubbles: false });
     }
   });
 
