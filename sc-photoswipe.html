@@ -105,7 +105,8 @@
           <label>
             <span>[[item.name]]</span>
           </label>
-          <img src$="[[thumbnail(item)]]" alt class$="[[className(item)]]" on-load="imageLoaded" crossOrigin="true">
+          <img src$="[[display(item)]]" alt class$="[[className(item)]]" on-load="imageLoaded" crossOrigin="true">
+          <img src$="[[thumbnail(item)]]" alt on-load="imageLoaded" crossOrigin="true" hidden>
         </div>
       </template>
     </iron-swipeable-container>
@@ -274,6 +275,14 @@
 
     thumbnail: function (item) {
       return item.thumbnail || item.thumbnail_url || item.src || this.dummy;
+    },
+
+    display: function (item) {
+      if (/image/i.test(item.type)) {
+        return item.src || this.dummy;
+      }
+
+      return this.thumbnail(item);
     },
 
     icon: function (item) {
