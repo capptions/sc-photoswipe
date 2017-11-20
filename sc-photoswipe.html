@@ -35,6 +35,14 @@
         justify-content: center;
       }
 
+      .preview > div:before, .preview ::content > div:before {
+        @apply(--sc-photoswipe-preview-item-before);
+      }
+
+      .preview > div:after, .preview ::content > div:after {
+        @apply(--sc-photoswipe-preview-item-after);
+      }
+
       .preview > div > img, .preview ::content > div > img {
         width: 100%;
         background: white;
@@ -100,7 +108,7 @@
     <iron-swipeable-container id="swipeable" class="preview" swipe-style="curved" disabled="[[!removeable]]">
       <content></content>
       <template is="dom-repeat" items="[[items]]">
-        <div data-index$="[[index]]" on-tap="popup">
+        <div data-index$="[[index]]" data-rindex$="[[rindex(items, index)]]" on-tap="popup">
           <iron-icon icon="[[icon(item)]]"></iron-icon>
           <label>
             <span>[[item.name]]</span>
@@ -300,6 +308,10 @@
       }
 
       return 'sc-photoswipe:insert-drive-file';
+    },
+
+    rindex: function (items, index) {
+      return items.length - index;
     },
 
     className: function (item) {
