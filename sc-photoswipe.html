@@ -207,6 +207,8 @@
         img.style.visibility = 'hidden';
         img.style.position = 'absolute';
 
+        img.crossOrigin = 'Anonymous';
+
         img.onload = function () {
           var rect = this.getBoundingClientRect();
           item.w = rect && rect.width * 10 || 100;
