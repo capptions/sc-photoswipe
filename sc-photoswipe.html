@@ -270,7 +270,7 @@
 
       if (!items.length || index < 0) {
         if (window.viewLink) {
-          return window.viewLink(item.src);
+          return window.viewLink(item.src, { filename: item.name });
         }
 
         return window.open(item.src);
