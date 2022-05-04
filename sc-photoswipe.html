@@ -141,6 +141,10 @@
         type: Boolean,
         value: false
       },
+      showLocalIndex: {
+        type: Boolean,
+        value: true
+      },
       options: {
         type: Object,
         value: {
@@ -313,7 +317,10 @@
     },
 
     rindex: function (items, index) {
-      return items.length - index;
+      if (this.showLocalIndex) {
+        return items.length - index;
+      }
+      return (items[index] || {}).global_index || 0;
     },
 
     className: function (item) {
